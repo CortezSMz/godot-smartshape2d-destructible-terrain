@@ -9,6 +9,8 @@ extends DestructibleSmartShape
 var _mouse_pos := Vector2()
 var _old_mouse_pos := Vector2()
 var _carve_circle := PackedVector2Array()
+var _touches: Dictionary = {}
+var _touch_action_done := false
 
 @onready var _carve_visualizer: Polygon2D = $CarveVisualizer
 
@@ -35,12 +37,52 @@ func _process(_delta: float) -> void:
 	if Input.is_action_pressed("ui_accept"):
 		_spawn_rigid_body()
 
+	# Touch: 1 finger = carve, 2 = add, 3 = spawn
+	if _touches.size() > 0:
+		var tp := _get_touch_center()
+		var tm := _old_mouse_pos.distance_to(tp) > min_movement_update
+		match _touches.size():
+			1:
+				if tm:
+					_mouse_pos = tp
+					_do_carve()
+					_old_mouse_pos = tp
+			2:
+				if tm:
+					_mouse_pos = tp
+					_do_add()
+					_old_mouse_pos = tp
+			3:
+				if not _touch_action_done:
+					_mouse_pos = tp
+					_spawn_rigid_body()
+					_touch_action_done = true
+		if _carve_visualizer:
+			_carve_visualizer.global_position = tp
+
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_mouse_pos = get_global_mouse_position()
 		if _carve_visualizer:
 			_carve_visualizer.global_position = _mouse_pos
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			_touches[event.index] = event.position
+			_touch_action_done = false
+		else:
+			_touches.erase(event.index)
+			if _touches.is_empty():
+				_touch_action_done = false
+	if event is InputEventScreenDrag:
+		_touches[event.index] = event.position
+
+
+func _get_touch_center() -> Vector2:
+	var sum := Vector2.ZERO
+	for pos in _touches.values():
+		sum += pos
+	return get_canvas_transform().affine_inverse() * (sum / _touches.size())
 
 
 func _build_carve_circle() -> void:
