@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://bps507fw2p8ai"]
+
+[ext_resource type="Texture2D" uid="uid://ckm4yyue6hm78" path="res://assets/rigid_sprite.png" id="1"]
+
+[sub_resource type="PhysicsMaterial" id="1"]
+friction = 0.76
+bounce = 0.3
+
+[sub_resource type="CircleShape2D" id="2"]
+
+[node name="RigidBody2D" type="RigidBody2D" unique_id=557849862]
+mass = 10.0
+physics_material_override = SubResource("1")
+gravity_scale = 3.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1713206242]
+scale = Vector2(0.5, 0.5)
+shape = SubResource("2")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=350357143]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("1")
