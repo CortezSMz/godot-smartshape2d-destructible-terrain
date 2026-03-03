@@ -42,7 +42,7 @@ func add(add_polygon: PackedVector2Array) -> void:
 			var pa := shape.get_point_array()
 			if pa.get_point_count() < 3:
 				continue
-			var verts := pa.get_vertices()
+			var verts := _clean_polygon(pa.get_tessellated_points())
 			var local_verts := _transform_polygon(verts, shape.transform)
 
 			var intersections := Geometry2D.intersect_polygons(local_verts, unified)
@@ -78,7 +78,7 @@ func _carve_shape(shape: SS2D_Shape, carve_polygon: PackedVector2Array) -> void:
 	if points.get_point_count() < 3:
 		return
 
-	var vertices := points.get_vertices()
+	var vertices := _clean_polygon(points.get_tessellated_points())
 	var shape_xform := shape.transform
 	var local_vertices := PackedVector2Array()
 	for v in vertices:
@@ -316,6 +316,21 @@ func _get_all_shapes() -> Array[SS2D_Shape]:
 
 
 # -- Helpers -------------------------------------------------------------------
+
+static func _clean_polygon(polygon: PackedVector2Array) -> PackedVector2Array:
+	if polygon.size() < 2:
+		return polygon
+	# Remove duplicate last point if it matches first (closed curve)
+	if polygon[0].distance_to(polygon[-1]) < 0.1:
+		polygon = polygon.slice(0, -1)
+	# Remove near-duplicate consecutive points
+	var cleaned := PackedVector2Array()
+	cleaned.append(polygon[0])
+	for i in range(1, polygon.size()):
+		if polygon[i].distance_to(polygon[i - 1]) > 0.5:
+			cleaned.append(polygon[i])
+	return cleaned
+
 
 func _to_local_polygon(global_polygon: PackedVector2Array) -> PackedVector2Array:
 	return global_transform.affine_inverse() * global_polygon
